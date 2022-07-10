@@ -1,0 +1,33 @@
+● Get Started with Apex Triggers
+CODE:
+
+1 trigger AccountAddressTrigger on Account (before insert, before update) {
+2
+3     for(Account a: Trigger.New){
+4
+5         if(a.Match_Billing_Address__c == true && a.BillingPostalCode!= null){
+6
+7             a.ShippingPostalCode=a.BillingPostalCode;
+8
+9         }
+10
+11     }
+12
+13 }
+
+
+
+
+●   Bulk Apex Triggers
+CODE:
+
+1 trigger ClosedOpportunityTrigger on Opportunity (after insert, after update) {
+2     List<Task> taskList = new List<Task>();
+3     for(Opportunity opp : [SELECT Id, StageName FROM Opportunity WHERE StageName='Closed Won' AND Id IN : Trigger.New]){
+4         taskList.add(new Task(Subject='Follow Up Test Task', WhatId = opp.Id));
+5     }
+6
+7     if(taskList.size()>0){
+8         insert tasklist;
+9     }
+10 }

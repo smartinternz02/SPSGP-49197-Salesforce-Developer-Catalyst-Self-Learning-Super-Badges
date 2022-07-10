@@ -1,0 +1,198 @@
+●  Get Started with Apex Unit Tests
+
+       1. verifyData
+CODE:
+1 public class VerifyDate {
+2
+3
+4
+5   //method to handle potential checks against two dates
+6
+7   public static Date CheckDates(Date date1, Date date2) {
+8
+9     //if date2 is within the next 30 days of date1, use date2.  Otherwise use the end of the month
+10
+11     if(DateWithin30Days(date1,date2)) {
+12
+13       return date2;
+14
+15     } else {
+16
+17       return SetEndOfMonthDate(date1);
+18
+19     }
+20
+21   }
+22
+23
+24
+25   //method to check if date2 is within the next 30 days of date1
+26
+27   private static Boolean DateWithin30Days(Date date1, Date date2) {
+28
+29     //check for date2 being in the past
+30
+31           if( date2 < date1) { return false; }
+32
+33
+34
+35           //check that date2 is within (>=) 30 days of date1
+36
+37           Date date30Days = date1.addDays(30); //create a date 30 days away from date1
+38
+39     if( date2 >= date30Days ) { return false; }
+40
+41     else { return true; }
+42
+43   }
+44
+45
+46
+47   //method to return the end of the month of a given date
+48
+49   private static Date SetEndOfMonthDate(Date date1) {
+50
+51     Integer totalDays = Date.daysInMonth(date1.year(), date1.month());
+52
+53     Date lastDay = Date.newInstance(date1.year(), date1.month(), totalDays);
+54
+55     return lastDay;
+56
+57   }
+58
+59
+60
+61 }
+62
+
+       2.TestVerifyDate 
+CODE:
+1 @isTest
+2
+3 public class TestVerifyDate 
+4
+5 {
+6
+7     static testMethod void testMethod1() 
+8
+9     {
+10
+11         Date d = VerifyDate.CheckDates(System.today(),System.today()+1);
+12
+13         Date d1 = VerifyDate.CheckDates(System.today(),System.today()+60);
+14
+15     }
+16
+17 }
+
+    
+● Test Apex Triggers
+
+               1.restrictcontactbyname
+CODE:
+1 trigger RestrictContactByName on Contact (before insert, before update) {
+2
+3 	
+4
+5 	//check contacts prior to insert or update for invalid data
+6
+7 	For (Contact c : Trigger.New) {
+8
+9 		if(c.LastName == 'INVALIDNAME') {	//invalidname is invalid
+10
+11 			c.AddError('The Last Name "'+c.LastName+'" is not allowed for DML');
+12
+13 		}
+14
+15
+16
+17 	}
+18
+19
+20
+21 }
+22
+
+             2.testrestrictcontactname
+CODE:
+1 @isTest
+2
+3 private class TestRestrictContactByName {
+4
+5
+6
+7     static testMethod void  metodoTest() 
+8
+9     {
+10
+11
+12
+13         List<Contact> listContact= new List<Contact>();
+14
+15         Contact c1 = new Contact(FirstName='Francesco', LastName='Riggio' , email='Test@test.com');
+16
+17         Contact c2 = new Contact(FirstName='Francesco1', LastName = 'INVALIDNAME',email='Test@test.com');
+18
+19         listContact.add(c1);
+20
+21         listContact.add(c2);
+22
+23
+24
+25         Test.startTest();
+26
+27             try
+28
+29             {
+30
+31                 insert listContact;
+32
+33             }
+34
+35             catch(Exception ee)
+36
+37             {
+38
+39             }
+40
+41
+42
+43         Test.stopTest();       
+44
+45     }  
+46
+47 }
+
+● Create Test Data for Apex Tests
+
+CODE:
+1 //@isTest
+2 public class RandomContactFactory {
+3
+4     public static List<Contact> generateRandomContacts(Integer numContactsToGenerate, String FName) {
+5
+6         List<Contact> contactList = new List<Contact>();
+7
+8
+9
+10     for(Integer i=0;i<numContactsToGenerate;i++) {
+11
+12             Contact c = new Contact(FirstName=FName + ' ' + i, LastName = 'Contact '+i);
+13
+14             contactList.add(c);
+15
+16             System.debug(c);
+17
+18         }
+19
+20         //insert contactList;
+21
+22         System.debug(contactList.size());
+23
+24         return contactList;
+25
+26     }
+27
+28
+29
+30 }

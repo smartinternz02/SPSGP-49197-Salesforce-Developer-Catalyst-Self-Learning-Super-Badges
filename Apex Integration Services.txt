@@ -1,0 +1,261 @@
+● Apex REST Callouts
+
+                  2.1 AnimalLocator 
+CODE:
+1 public class AnimalLocator{
+2
+3     public static String getAnimalNameById(Integer x){
+4
+5         Http http = new Http();
+6
+7         HttpRequest req = new HttpRequest();
+8
+9         req.setEndpoint('https://th-apex-http-callout.herokuapp.com/animals/' + x);
+10
+11         req.setMethod('GET');
+12
+13         Map<String, Object> animal= new Map<String, Object>();
+14
+15         HttpResponse res = http.send(req);
+16
+17             if (res.getStatusCode() == 200) {
+18
+19         Map<String, Object> results = (Map<String, Object>)JSON.deserializeUntyped(res.getBody());
+20
+21       animal = (Map<String, Object>) results.get('animal');
+22
+23         }
+24
+25 return (String)animal.get('name');
+26
+27     }
+28
+29 }
+30
+
+
+                2.2 AnimalLocatorTest 
+CODE:
+1 @isTest
+2
+3 private class AnimalLocatorTest{
+4
+5     @isTest static void AnimalLocatorMock1() {
+6
+7         Test.setMock(HttpCalloutMock.class, new AnimalLocatorMock());
+8
+9         string result = AnimalLocator.getAnimalNameById(3);
+10
+11         String expectedResult = 'chicken';
+12
+13         System.assertEquals(result,expectedResult );
+14
+15     }
+16
+17 }
+18
+
+       
+
+
+
+                  2.3 AnimalLocatorMock
+CODE: 
+1 @isTest
+2
+3 global class AnimalLocatorMock implements HttpCalloutMock {
+4
+5      // Implement this interface method
+6
+7     global HTTPResponse respond(HTTPRequest request) {
+8
+9         // Create a fake response
+10
+11         HttpResponse response = new HttpResponse();
+12
+13         response.setHeader('Content-Type', 'application/json');
+14
+15         response.setBody('{"animals": ["majestic badger", "fluffy bunny", "scary bear", "chicken", "mighty moose"]}');
+16
+17         response.setStatusCode(200);
+18
+19         return response; 
+20
+21     }
+22
+23 }
+	
+	
+
+●  Apex SOAP Callouts
+
+                         3.1 ParkLocator 
+CODE:
+1 public class ParkLocator {
+2
+3     public static string[] country(string theCountry) {
+4
+5         ParkService.ParksImplPort  parkSvc = new  ParkService.ParksImplPort(); // remove space
+6
+7         return parkSvc.byCountry(theCountry);
+8
+9     }
+10
+11 }
+12
+
+                         3.2 ParkLocatorTest 
+CODE:
+1 @isTest
+2
+3 private class ParkLocatorTest {
+4
+5     @isTest static void testCallout() {              
+6
+7         Test.setMock(WebServiceMock.class, new ParkServiceMock ());
+8
+9         String country = 'United States';
+10
+11         List<String> result = ParkLocator.country(country);
+12
+13         List<String> parks = new List<String>{'Yellowstone', 'Mackinac National Park', 'Yosemite'};
+14
+15          System.assertEquals(parks, result); 
+16
+17     }
+18
+19 }
+
+	                
+                         3.3 ParkServiceMock 
+CODE:
+1 @isTest
+2
+3 global class ParkServiceMock implements WebServiceMock {
+4
+5    global void doInvoke(
+6
+7            Object stub,
+8
+9            Object request,
+10
+11            Map<String, Object> response,
+12
+13            String endpoint,
+14
+15            String soapAction,
+16
+17            String requestName,
+18
+19            String responseNS,
+20
+21            String responseName,
+22
+23            String responseType) {
+24
+25         // start - specify the response you want to send
+26
+27         ParkService.byCountryResponse response_x = new ParkService.byCountryResponse();
+28
+29         response_x.return_x = new List<String>{'Yellowstone', 'Mackinac National Park', 'Yosemite'};
+30
+31         // end
+32
+33         response.put('response_x', response_x); 
+34
+35    }
+36
+37 }
+
+
+	
+● Apex Web Services
+
+                      4.1 AccountManager
+CODE: 
+1 @RestResource(urlMapping='/Accounts/*/contacts')
+2
+3 global class AccountManager {
+4
+5     @HttpGet
+6
+7     global static Account getAccount() {
+8
+9         RestRequest req = RestContext.request;
+10
+11         String accId = req.requestURI.substringBetween('Accounts/', '/contacts');
+12
+13         Account acc = [SELECT Id, Name, (SELECT Id, Name FROM Contacts) 
+14
+15                        FROM Account WHERE Id = :accId];
+16
+17         return acc;
+18
+19     }
+20
+21 }
+22
+
+
+                   4.2 AccountManagerTest
+CODE: 
+1 @isTest
+2
+3 private class AccountManagerTest {
+4
+5
+6
+7     private static testMethod void getAccountTest1() {
+8
+9         Id recordId = createTestRecord();
+10
+11         // Set up a test request
+12
+13         RestRequest request = new RestRequest();
+14
+15         request.requestUri = 'https://na1.salesforce.com/services/apexrest/Accounts/'+ recordId +'/contacts' ;
+16
+17         request.httpMethod = 'GET';
+18
+19         RestContext.request = request;
+20
+21         // Call the method to test
+22
+23         Account thisAccount = AccountManager.getAccount();
+24
+25         // Verify results
+26
+27         System.assert(thisAccount != null);
+28
+29         System.assertEquals('Test record', thisAccount.Name);
+30
+31
+32
+33     }
+34
+35
+36
+37     // Helper method
+38
+39         static Id createTestRecord() {
+40
+41         // Create test record
+42
+43         Account TestAcc = new Account(
+44
+45           Name='Test record');
+46
+47         insert TestAcc;
+48
+49         Contact TestCon= new Contact(
+50
+51         LastName='Test', 
+52
+53         AccountId = TestAcc.id);
+54
+55         return TestAcc.Id;
+56
+57     } 
+58
+59 }
+
